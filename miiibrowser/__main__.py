@@ -1,8 +1,13 @@
 import tkinter as tk
 from tkinter import ttk
+import threading
+import urllib.request
+import urllib.parse
+import json
+import re
 
 
-# ── colour palette (Chrome-inspired) ──────────────────────────────
+# ── colour palette ──────────────────────────────
 BG_TITLEBAR  = "#202124"
 BG_TAB       = "#35363a"
 BG_TAB_ACTIVE = "#292a2d"
@@ -14,8 +19,6 @@ ACCENT        = "#8ab4f8"
 
 
 class TabBar(tk.Frame):
-    """Row of fake tabs + a '+' new-tab button."""
-
     def __init__(self, master):
         super().__init__(master, bg=BG_TITLEBAR)
         self.tabs: list[tk.Label] = []
@@ -56,8 +59,8 @@ class Toolbar(tk.Frame):
             bd=0, padx=6, pady=2, cursor="hand2",
             activebackground=BG_TOOLBAR, activeforeground=FG_TEXT,
         )
-        # back / forward / reload / home
-        for symbol in ("←", "→", "⟳", "⌂"):
+        # back / forward / reload
+        for symbol in ("←", "→", "⟳"):
             tk.Button(self, text=symbol, **btn_cfg).pack(side="left", padx=2)
 
         # URL / search bar
@@ -88,10 +91,12 @@ class Toolbar(tk.Frame):
 
         entry.bind("<FocusIn>", _on_focus_in)
         entry.bind("<FocusOut>", _on_focus_out)
+        entry.bind("<Return>", lambda e: self.on_navigate(entry.get()))
+        self.entry = entry
+        self.placeholder = placeholder
 
-        # extra buttons (extensions / profile placeholders)
-        for symbol in ("⋮",):
-            tk.Button(self, text=symbol, **btn_cfg).pack(side="right", padx=2)
+    def on_navigate(self, text):
+        pass  # overridden by BrowserWindow
 
 
 class BrowserWindow(tk.Tk):
@@ -111,16 +116,72 @@ class BrowserWindow(tk.Tk):
         # toolbar
         self.toolbar = Toolbar(self)
         self.toolbar.pack(fill="x", padx=4, pady=(0, 2))
+        self.toolbar.on_navigate = self._navigate
 
-        # content area (blank page)
+        # content area
         self.content = tk.Frame(self, bg="#202124")
         self.content.pack(fill="both", expand=True)
 
-        # centered "New Tab" label like Chrome's blank page
-        tk.Label(
-            self.content, text="MiiiBrowser", font=("Segoe UI", 28, "bold"),
+        # scrollable raw-output text widget
+        self.output = tk.Text(
+            self.content, bg="#202124", fg=FG_TEXT,
+            font=("Consolas", 10), wrap="word",
+            relief="flat", state="disabled",
+            insertbackground=FG_TEXT,
+        )
+        scrollbar = tk.Scrollbar(self.content, command=self.output.yview, bg=BG_TOOLBAR)
+        self.output.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        self.output.pack(fill="both", expand=True)
+
+        # centered logo on blank page
+        self.logo = tk.Label(
+            self.output, text="MiiiBrowser", font=("Segoe UI", 28, "bold"),
             bg="#202124", fg=FG_DIM,
-        ).place(relx=0.5, rely=0.38, anchor="center")
+        )
+        self.output.window_create("end", window=self.logo)
+
+    # ── detect URL vs search query ────────────────────────────────
+    _URL_RE = re.compile(r"^(https?://|www\.)\S+", re.IGNORECASE)
+
+    def _navigate(self, text: str):
+        if text == self.toolbar.placeholder or not text.strip():
+            return
+        query = text.strip()
+        self._set_output("Loading…")
+        if self._URL_RE.match(query):
+            url = query if query.startswith("http") else "https://" + query
+            threading.Thread(target=self._fetch_url, args=(url,), daemon=True).start()
+        else:
+            threading.Thread(target=self._fetch_ddg, args=(query,), daemon=True).start()
+
+    def _fetch_url(self, url: str):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "MiiiBrowser/0.1"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                raw = resp.read().decode("utf-8", errors="replace")
+        except Exception as exc:
+            raw = f"Error: {exc}"
+        self.after(0, self._set_output, raw)
+
+    def _fetch_ddg(self, query: str):
+        try:
+            params = urllib.parse.urlencode({"q": query, "format": "json", "no_html": "1", "skip_disambig": "1"})
+            url = f"https://api.duckduckgo.com/?{params}"
+            req = urllib.request.Request(url, headers={"User-Agent": "MiiiBrowser/0.1"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                raw = resp.read().decode("utf-8", errors="replace")
+            # pretty-print JSON
+            raw = json.dumps(json.loads(raw), indent=2, ensure_ascii=False)
+        except Exception as exc:
+            raw = f"Error: {exc}"
+        self.after(0, self._set_output, raw)
+
+    def _set_output(self, text: str):
+        self.output.configure(state="normal")
+        self.output.delete("1.0", "end")
+        self.output.insert("end", text)
+        self.output.configure(state="disabled")
 
 
 def main():
