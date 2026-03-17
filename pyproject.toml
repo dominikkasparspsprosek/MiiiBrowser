@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "miiibrowser"
+version = "0.1.0"
+description = "A Chrome-style Python desktop browser with tabbed interface and DuckDuckGo search integration."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = [
+    "tkinterweb",
+    "tinycss2",
+]
+
+[project.scripts]
+miiibrowser = "miiibrowser.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["miiibrowser*"]
