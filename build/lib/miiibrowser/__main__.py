@@ -152,7 +152,7 @@ class BrowserWindow(tk.Tk):
         self.output.window_create("end", window=self.logo)
 
     # ── detect URL vs search query ────────────────────────────────
-    _URL_RE = re.compile(r"^(https?://|www\.)\S+|^[\w.-]+\.[a-zA-Z]{2,}(/\S*)?$", re.IGNORECASE)
+    _URL_RE = re.compile(r"^(https?://|www\.)\S+", re.IGNORECASE)
 
     def _navigate(self, text: str):
         if text == self.toolbar.placeholder or not text.strip():

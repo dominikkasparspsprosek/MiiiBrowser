@@ -1,0 +1,11 @@
+LICENSE
+README.md
+pyproject.toml
+miiibrowser/__init__.py
+miiibrowser/__main__.py
+miiibrowser.egg-info/PKG-INFO
+miiibrowser.egg-info/SOURCES.txt
+miiibrowser.egg-info/dependency_links.txt
+miiibrowser.egg-info/entry_points.txt
+miiibrowser.egg-info/requires.txt
+miiibrowser.egg-info/top_level.txt
