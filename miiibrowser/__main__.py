@@ -174,13 +174,50 @@ class BrowserWindow(tk.Tk):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "MiiiBrowser/0.1"})
             with urllib.request.urlopen(req, timeout=10) as resp:
+                base_url = resp.url  # final URL after redirects
                 raw = resp.read().decode("utf-8", errors="replace")
-            titles = re.findall(r"<title[^>]*>(.*?)</title>", raw, re.IGNORECASE | re.DOTALL)
+
+            # ── extract and strip <head> ──────────────────────────
+            head_match = re.search(r"<head[^>]*>(.*?)</head>", raw, re.IGNORECASE | re.DOTALL)
+            self.head = head_match.group(1) if head_match else ""
+            body = raw[head_match.end():] if head_match else raw  # everything after </head>
+
+            # ── title ─────────────────────────────────────────────
+            titles = re.findall(r"<title[^>]*>(.*?)</title>", self.head, re.IGNORECASE | re.DOTALL)
             tab_title = titles[0].strip() if len(titles) == 1 else "document"
+
+            # ── stylesheets: inline <style> blocks ────────────────
+            self.stylesheets: dict[str, str] = {}
+            for i, css in enumerate(re.findall(
+                r"<style[^>]*>(.*?)</style>", self.head, re.IGNORECASE | re.DOTALL
+            )):
+                self.stylesheets[f"inline_{i}"] = css.strip()
+
+            # ── stylesheets: external <link rel="stylesheet"> ─────
+            for link_tag in re.findall(r"<link[^>]+>", self.head, re.IGNORECASE):
+                if re.search(r'rel=["\']stylesheet["\']', link_tag, re.IGNORECASE):
+                    href_m = re.search(r'href=["\']([^"\']+)["\']', link_tag, re.IGNORECASE)
+                    if href_m:
+                        href = href_m.group(1)
+                        # resolve relative URLs
+                        sheet_url = urllib.parse.urljoin(base_url, href)
+                        sheet_name = href.split("/")[-1].split("?")[0] or href
+                        try:
+                            sheet_req = urllib.request.Request(
+                                sheet_url, headers={"User-Agent": "MiiiBrowser/0.1"}
+                            )
+                            with urllib.request.urlopen(sheet_req, timeout=8) as sr:
+                                self.stylesheets[sheet_name] = sr.read().decode("utf-8", errors="replace")
+                        except Exception:
+                            self.stylesheets[sheet_name] = ""  # failed to fetch
+
         except Exception as exc:
-            raw = f"Error: {exc}"
+            body = f"Error: {exc}"
             tab_title = "document"
-        self.after(0, self._set_plain, raw)
+            self.head = ""
+            self.stylesheets = {}
+
+        self.after(0, self._set_plain, body)
         self.after(0, self._set_tab_title, tab_title)
 
     def _fetch_ddg(self, query: str):
