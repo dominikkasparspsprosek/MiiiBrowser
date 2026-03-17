@@ -96,7 +96,7 @@ class Toolbar(tk.Frame):
         self.placeholder = placeholder
 
     def on_navigate(self, text):
-        pass  # overridden by BrowserWindow
+        pass 
 
 
 class BrowserWindow(tk.Tk):
@@ -134,6 +134,16 @@ class BrowserWindow(tk.Tk):
         scrollbar.pack(side="right", fill="y")
         self.output.pack(fill="both", expand=True)
 
+        # text style tags
+        self.output.tag_configure("h1",      font=("Segoe UI", 22, "bold"),  foreground=FG_TEXT)
+        self.output.tag_configure("h2",      font=("Segoe UI", 13, "bold"),  foreground=FG_TEXT)
+        self.output.tag_configure("section", font=("Segoe UI", 11, "bold"),  foreground=ACCENT)
+        self.output.tag_configure("body",    font=("Segoe UI", 10),          foreground=FG_TEXT)
+        self.output.tag_configure("dim",     font=("Segoe UI", 9),           foreground=FG_DIM)
+        self.output.tag_configure("link",    font=("Segoe UI", 9),           foreground=ACCENT)
+        self.output.tag_configure("divider", foreground="#3c4043")
+        self._link_counter = 0
+
         # centered logo on blank page
         self.logo = tk.Label(
             self.output, text="MiiiBrowser", font=("Segoe UI", 28, "bold"),
@@ -148,7 +158,12 @@ class BrowserWindow(tk.Tk):
         if text == self.toolbar.placeholder or not text.strip():
             return
         query = text.strip()
-        self._set_output("Loading…")
+        # update URL bar
+        self.toolbar.entry.configure(state="normal")
+        self.toolbar.entry.delete(0, "end")
+        self.toolbar.entry.insert(0, query)
+        self.toolbar.entry.config(fg=FG_TEXT)
+        self._set_plain("Loading…")
         if self._URL_RE.match(query):
             url = query if query.startswith("http") else "https://" + query
             threading.Thread(target=self._fetch_url, args=(url,), daemon=True).start()
@@ -160,28 +175,159 @@ class BrowserWindow(tk.Tk):
             req = urllib.request.Request(url, headers={"User-Agent": "MiiiBrowser/0.1"})
             with urllib.request.urlopen(req, timeout=10) as resp:
                 raw = resp.read().decode("utf-8", errors="replace")
+            titles = re.findall(r"<title[^>]*>(.*?)</title>", raw, re.IGNORECASE | re.DOTALL)
+            tab_title = titles[0].strip() if len(titles) == 1 else "document"
         except Exception as exc:
             raw = f"Error: {exc}"
-        self.after(0, self._set_output, raw)
+            tab_title = "document"
+        self.after(0, self._set_plain, raw)
+        self.after(0, self._set_tab_title, tab_title)
 
     def _fetch_ddg(self, query: str):
         try:
-            params = urllib.parse.urlencode({"q": query, "format": "json", "no_html": "1", "skip_disambig": "1"})
+            params = urllib.parse.urlencode({"q": query, "format": "json", "no_html": "1"})
             url = f"https://api.duckduckgo.com/?{params}"
             req = urllib.request.Request(url, headers={"User-Agent": "MiiiBrowser/0.1"})
             with urllib.request.urlopen(req, timeout=10) as resp:
-                raw = resp.read().decode("utf-8", errors="replace")
-            # pretty-print JSON
-            raw = json.dumps(json.loads(raw), indent=2, ensure_ascii=False)
+                data = json.loads(resp.read().decode("utf-8", errors="replace"))
         except Exception as exc:
-            raw = f"Error: {exc}"
-        self.after(0, self._set_output, raw)
+            self.after(0, self._set_plain, f"Error: {exc}")
+            return
 
-    def _set_output(self, text: str):
-        self.output.configure(state="normal")
-        self.output.delete("1.0", "end")
-        self.output.insert("end", text)
-        self.output.configure(state="disabled")
+        # find the first usable URL: direct results first, then related topics
+        first_url = None
+        for item in data.get("Results", []):
+            if item.get("FirstURL"):
+                first_url = item["FirstURL"]
+                break
+        if not first_url:
+            for item in data.get("RelatedTopics", []):
+                if item.get("FirstURL"):
+                    first_url = item["FirstURL"]
+                    break
+                for sub in item.get("Topics", []):
+                    if sub.get("FirstURL"):
+                        first_url = sub["FirstURL"]
+                        break
+                if first_url:
+                    break
+
+        if first_url:
+            self.after(0, self._navigate, first_url)
+        else:
+            self.after(0, self._set_plain, "No results found.")
+
+    def _set_tab_title(self, title: str):
+        if self.tab_bar.tabs:
+            self.tab_bar.tabs[0].configure(text=f"  {title}  ")
+
+    def _insert_link(self, text: str, url: str):
+        t = self.output
+        tag = f"_link_{self._link_counter}"
+        self._link_counter += 1
+        t.tag_configure(tag, font=("Segoe UI", 9), foreground=ACCENT, underline=True)
+        t.tag_bind(tag, "<Enter>",  lambda e: t.configure(cursor="hand2"))
+        t.tag_bind(tag, "<Leave>",  lambda e: t.configure(cursor=""))
+        t.tag_bind(tag, "<Button-1>", lambda e, u=url: self._navigate(u))
+        t.insert("end", text, (tag,))
+
+    def _set_plain(self, text: str):
+        t = self.output
+        t.configure(state="normal")
+        t.delete("1.0", "end")
+        t.insert("end", text, "body")
+        t.configure(state="disabled")
+
+    def _render_ddg(self, d: dict):
+        t = self.output
+        t.configure(state="normal")
+        t.delete("1.0", "end")
+        self._link_counter = 0
+
+        def w(text, tag="body"):
+            t.insert("end", text, tag)
+
+        def divider():
+            w("\n" + "─" * 80 + "\n", "divider")
+
+        heading = d.get("Heading", "")
+        if heading:
+            w(heading + "\n", "h1")
+
+        abstract = d.get("AbstractText") or d.get("Abstract", "")
+        if abstract:
+            w(abstract + "\n", "body")
+            src_url = d.get("AbstractURL", "")
+            src_name = d.get("AbstractSource", "")
+            if src_url:
+                self._insert_link(f"{src_name}  {src_url}\n", src_url)
+
+        answer = d.get("Answer", "")
+        if answer:
+            if heading or abstract:
+                divider()
+            w("Answer\n", "section")
+            w(answer + "\n", "body")
+
+        definition = d.get("Definition", "")
+        if definition:
+            divider()
+            w("Definition\n", "section")
+            w(definition + "\n", "body")
+            def_url = d.get("DefinitionURL", "")
+            def_src = d.get("DefinitionSource", "")
+            if def_url:
+                self._insert_link(f"{def_src}  {def_url}\n", def_url)
+
+        topics = d.get("RelatedTopics", [])
+        if topics:
+            divider()
+            w("Related Topics\n", "section")
+
+            def render_topic(item: dict, indent: str = "  "):
+                title_raw = item.get("Text", "")
+                url = item.get("FirstURL", "")
+                if not title_raw:
+                    return
+                parts = title_raw.split("  ", 1)
+                title = parts[0].strip()
+                desc  = parts[1].strip() if len(parts) > 1 else ""
+                w(f"\n{indent}", "body")
+                w(title, "h2")
+                if desc:
+                    w(f"\n{indent}  {desc}\n", "body")
+                else:
+                    w("\n", "body")
+                if url:
+                    self._insert_link(f"{indent}{url}\n", url)
+
+            for item in topics:
+                if "Topics" in item:
+                    # grouped sub-section
+                    w(f"\n  {item.get('Name', 'More')}\n", "dim")
+                    for sub in item["Topics"]:
+                        render_topic(sub, indent="    ")
+                else:
+                    render_topic(item)
+
+        # ── direct results ──
+        results = d.get("Results", [])
+        if results:
+            divider()
+            w("Results\n", "section")
+            for item in results:
+                text = item.get("Text", "")
+                url  = item.get("FirstURL", "")
+                if text:
+                    w(f"\n  {text}\n", "body")
+                if url:
+                    self._insert_link(f"{url}\n", url)
+
+        if not any([heading, abstract, answer, definition, topics, results]):
+            w("No results found.", "dim")
+
+        t.configure(state="disabled")
+        t.yview_moveto(0)
 
 
 def main():
