@@ -5,6 +5,7 @@ import urllib.request
 import urllib.parse
 import json
 import re
+from html.parser import HTMLParser
 
 
 # ── colour palette ──────────────────────────────
@@ -16,6 +17,44 @@ FG_TEXT       = "#e8eaed"
 FG_DIM        = "#9aa0a6"
 BG_URLBAR     = "#202124"
 ACCENT        = "#8ab4f8"
+
+
+class TreeHTMLParser(HTMLParser):
+    """Parse HTML into a nested tree of element/text dictionaries."""
+
+    _VOID_TAGS = {
+        "area", "base", "br", "col", "embed", "hr", "img", "input",
+        "link", "meta", "param", "source", "track", "wbr",
+    }
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.root = {"type": "root", "children": []}
+        self._stack = [self.root]
+
+    def handle_starttag(self, tag, attrs):
+        node = {
+            "type": "element",
+            "tag": tag,
+            "attrs": {k: v for k, v in attrs if k},
+            "children": [],
+        }
+        self._stack[-1]["children"].append(node)
+        if tag not in self._VOID_TAGS:
+            self._stack.append(node)
+
+    def handle_endtag(self, tag):
+        for idx in range(len(self._stack) - 1, 0, -1):
+            node = self._stack[idx]
+            if node.get("type") == "element" and node.get("tag") == tag:
+                del self._stack[idx:]
+                break
+
+    def handle_data(self, data):
+        text = " ".join(data.split())
+        if not text:
+            return
+        self._stack[-1]["children"].append({"type": "text", "value": text})
 
 
 class TabBar(tk.Frame):
@@ -212,13 +251,21 @@ class BrowserWindow(tk.Tk):
                             self.stylesheets[sheet_name] = ""  # failed to fetch
                 print(self.stylesheets)
 
+            body_tree = self._build_content_tree(body, base_url, tab_title)
+            print("\nMiiiBrowser content tree:\n")
+            print(json.dumps(body_tree, indent=2, ensure_ascii=False))
+
         except Exception as exc:
             body = f"Error: {exc}"
             tab_title = "document"
             self.head = ""
             self.stylesheets = {}
+            body_tree = None
 
-        self.after(0, self._set_plain, body)
+        if body_tree is not None:
+            self.after(0, self._set_tree_text, body_tree)
+        else:
+            self.after(0, self._set_plain, body)
         self.after(0, self._set_tab_title, tab_title)
 
     def _fetch_ddg(self, query: str):
@@ -274,6 +321,42 @@ class BrowserWindow(tk.Tk):
         t.configure(state="normal")
         t.delete("1.0", "end")
         t.insert("end", text, "body")
+        t.configure(state="disabled")
+
+    def _build_content_tree(self, body_html: str, url: str, title: str) -> dict:
+        parser = TreeHTMLParser()
+        parser.feed(body_html)
+        parser.close()
+        return {
+            "type": "document",
+            "meta": {"url": url, "title": title},
+            "children": parser.root["children"],
+        }
+
+    def _collect_text_nodes(self, node: dict, output: list[str]):
+        node_type = node.get("type")
+        if node_type == "text":
+            value = node.get("value", "")
+            if value:
+                output.append(value)
+            return
+        for child in node.get("children", []):
+            self._collect_text_nodes(child, output)
+
+    def _set_tree_text(self, tree: dict):
+        visible_text: list[str] = []
+        self._collect_text_nodes(tree, visible_text)
+
+        t = self.output
+        t.configure(state="normal")
+        t.delete("1.0", "end")
+
+        if visible_text:
+            for line in visible_text:
+                t.insert("end", line + "\n", "body")
+        else:
+            t.insert("end", "No visible text found.", "dim")
+
         t.configure(state="disabled")
 
     def _render_ddg(self, d: dict):
