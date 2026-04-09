@@ -27,10 +27,16 @@ class TreeHTMLParser(HTMLParser):
         "link", "meta", "param", "source", "track", "wbr",
     }
 
+    _INVISIBLE_TAGS = {
+        "script", "style", "link", "meta", "noscript",
+    }
+
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.root = {"type": "root", "children": []}
         self._stack = [self.root]
+        self.invisible_tags = []
+        self._invisible_stack = []
 
     def handle_starttag(self, tag, attrs):
         node = {
@@ -39,11 +45,41 @@ class TreeHTMLParser(HTMLParser):
             "attrs": {k: v for k, v in attrs if k},
             "children": [],
         }
+
+        # If we are already inside an invisible tag, keep collecting into that branch.
+        if self._invisible_stack:
+            self._invisible_stack[-1]["children"].append(node)
+            if tag not in self._VOID_TAGS:
+                self._invisible_stack.append(node)
+            return
+
+        # Start a new invisible branch for configured tags.
+        if tag in self._INVISIBLE_TAGS:
+            self.invisible_tags.append(node)
+            if tag in self._VOID_TAGS:
+                # Void tags like <meta>, <link> are complete as-is.
+                return
+            else:
+                # Non-void tags like <script>, <style> can contain nested data.
+                self._invisible_stack.append(node)
+            return
+
+        # Add to visible tree.
         self._stack[-1]["children"].append(node)
         if tag not in self._VOID_TAGS:
             self._stack.append(node)
 
     def handle_endtag(self, tag):
+        # Close inside invisible branch first.
+        if self._invisible_stack:
+            for idx in range(len(self._invisible_stack) - 1, -1, -1):
+                node = self._invisible_stack[idx]
+                if node.get("tag") == tag:
+                    del self._invisible_stack[idx:]
+                    break
+            return
+
+        # Close visible branch.
         for idx in range(len(self._stack) - 1, 0, -1):
             node = self._stack[idx]
             if node.get("type") == "element" and node.get("tag") == tag:
@@ -54,6 +90,13 @@ class TreeHTMLParser(HTMLParser):
         text = " ".join(data.split())
         if not text:
             return
+
+        # Store content in invisible branch when currently inside one.
+        if self._invisible_stack:
+            self._invisible_stack[-1]["children"].append({"type": "text", "value": text})
+            return
+
+        # Store visible text
         self._stack[-1]["children"].append({"type": "text", "value": text})
 
 
@@ -210,6 +253,7 @@ class BrowserWindow(tk.Tk):
             threading.Thread(target=self._fetch_ddg, args=(query,), daemon=True).start()
 
     def _fetch_url(self, url: str):
+        body_tree = None
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "MiiiBrowser/0.1"})
             with urllib.request.urlopen(req, timeout=10) as resp:
@@ -251,16 +295,21 @@ class BrowserWindow(tk.Tk):
                             self.stylesheets[sheet_name] = ""  # failed to fetch
                 print(self.stylesheets)
 
-            body_tree = self._build_content_tree(body, base_url, tab_title)
-            print("\nMiiiBrowser content tree:\n")
+            body_tree, invisible_tags = self._build_content_tree(body, base_url, tab_title)
+            print("\n" + "="*80)
+            print("MiiiBrowser Content Tree (Visible):")
+            print("="*80 + "\n")
             print(json.dumps(body_tree, indent=2, ensure_ascii=False))
+            print("\n" + "="*80)
+            print("Invisible Tags (Scripts, Styles, Meta):")
+            print("="*80 + "\n")
+            print(json.dumps(invisible_tags, indent=2, ensure_ascii=False))
 
         except Exception as exc:
             body = f"Error: {exc}"
             tab_title = "document"
             self.head = ""
             self.stylesheets = {}
-            body_tree = None
 
         if body_tree is not None:
             self.after(0, self._set_tree_text, body_tree)
@@ -323,15 +372,21 @@ class BrowserWindow(tk.Tk):
         t.insert("end", text, "body")
         t.configure(state="disabled")
 
-    def _build_content_tree(self, body_html: str, url: str, title: str) -> dict:
+    def _build_content_tree(self, body_html: str, url: str, title: str) -> tuple:
         parser = TreeHTMLParser()
         parser.feed(body_html)
         parser.close()
-        return {
+        visible_tree = {
             "type": "document",
             "meta": {"url": url, "title": title},
             "children": parser.root["children"],
         }
+        invisible_tags_obj = {
+            "type": "invisible_tags",
+            "meta": {"url": url, "title": title},
+            "items": parser.invisible_tags,
+        }
+        return visible_tree, invisible_tags_obj
 
     def _collect_text_nodes(self, node: dict, output: list[str]):
         node_type = node.get("type")
