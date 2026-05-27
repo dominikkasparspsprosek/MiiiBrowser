@@ -22,6 +22,12 @@ except ImportError:
 class BrowserWindow(tk.Tk):
     """Top-level Tk window that hosts tabs, navigation, and content."""
 
+    _BLOCKED_ASSET_EXTENSIONS = {
+        ".js", ".mjs", ".cjs",
+        ".ts", ".tsx", ".jsx",
+        ".map", ".json",
+    }
+
     def __init__(self) -> None:
         super().__init__()
         self.title("MiiiBrowser")
@@ -106,6 +112,11 @@ class BrowserWindow(tk.Tk):
     def _fetch_url(self, url: str) -> None:
         """Fetch a web page and render its extracted title and body."""
         try:
+            if self._is_blocked_asset_url(url):
+                self.after(0, self._set_plain, f"Blocked non-HTML asset: {url}")
+                self.after(0, self._set_tab_title, "document")
+                return
+
             req = urllib.request.Request(url, headers={"User-Agent": "MiiiBrowser/0.1"})
             with urllib.request.urlopen(req, timeout=10) as resp:
                 raw = resp.read()
@@ -121,6 +132,12 @@ class BrowserWindow(tk.Tk):
 
         self.after(0, self._set_plain, body)
         self.after(0, self._set_tab_title, tab_title)
+
+    def _is_blocked_asset_url(self, url: str) -> bool:
+        """Return True for URLs that point to non-HTML asset files."""
+        parsed = urllib.parse.urlsplit(url)
+        path = parsed.path.lower()
+        return any(path.endswith(ext) for ext in self._BLOCKED_ASSET_EXTENSIONS)
 
     def _fetch_ddg(self, query: str) -> None:
         """Resolve a DuckDuckGo query to a likely target URL."""

@@ -32,18 +32,8 @@ def _normalize_html(html_string: str) -> str:
     text = html_string.lstrip("\ufeff")
     text = re.sub(r"<!DOCTYPE[^>]*>", "", text, flags=re.IGNORECASE)
 
-    # escape stray ampersands that are not valid entities
-    # wrap script/style/noscript contents in CDATA so raw JS/CSS doesn't break XML parsing
-    def _wrap_cdata(m: re.Match[str]) -> str:
-        tag = m.group(1)
-        attrs = m.group(2) or ""
-        inner = m.group(3) or ""
-        # avoid double-wrapping if CDATA already present
-        if "<![CDATA[" in inner:
-            return m.group(0)
-        return f"<{tag}{attrs}><![CDATA[{inner}]]></{tag}>"
-
-    text = re.sub(r"<(script|style|noscript)([^>]*)>(.*?)</\1>", _wrap_cdata, text, flags=re.IGNORECASE | re.DOTALL)
+    for tag in _INVISIBLE_TAGS:
+        text = re.sub(rf"<{tag}\b[^>]*>.*?</{tag}>", "", text, flags=re.IGNORECASE | re.DOTALL)
 
     # convert named HTML entities to numeric references (e.g. &nbsp; -> &#160;)
     def _named_entity_repl(m: re.Match[str]) -> str:
@@ -61,7 +51,12 @@ def _normalize_html(html_string: str) -> str:
 
     # self-close void tags to help the XML parser
     for tag in _VOID_TAGS:
-        text = re.sub(rf"<({tag})(\s[^<>]*?)?>", rf"<\1\2/>", text, flags=re.IGNORECASE)
+            def _self_close_void_tag(match: re.Match[str]) -> str:
+                attrs = (match.group(2) or "").rstrip()
+                attrs = re.sub(r"\s*/+$", "", attrs)
+                return f"<{match.group(1)}{attrs}/>"
+
+            text = re.sub(rf"<({tag})(\s[^<>]*?)?>", _self_close_void_tag, text, flags=re.IGNORECASE)
     # convert common boolean attributes inside tags to explicit attributes
     bool_attrs = [
         "async", "defer", "autoplay", "controls", "muted", "loop",
@@ -106,9 +101,19 @@ def _log_parse_error_context(html_string: str, exc: Exception) -> None:
 
     line_text = lines[line_no - 1]
     print(f"Parse error at line {line_no}, column {column_no or '?'}")
-    print(line_text)
+
     if isinstance(column_no, int) and column_no > 0:
-        print(" " * max(0, column_no - 1) + "^")
+        radius = 120
+        center = column_no - 1
+        start = max(0, center - radius)
+        end = min(len(line_text), center + radius)
+        prefix = "..." if start > 0 else ""
+        suffix = "..." if end < len(line_text) else ""
+        excerpt = line_text[start:end]
+        print(f"{prefix}{excerpt}{suffix}")
+        print(" " * (len(prefix) + max(0, center - start)) + "^")
+    else:
+        print(line_text)
 
 
 def extract_title(html_string: bytes | str) -> str:
