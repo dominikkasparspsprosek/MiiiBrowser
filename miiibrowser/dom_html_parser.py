@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from typing import Any, Callable
+from urllib.parse import quote, urljoin
 from xml.dom.minidom import Node, parseString
 from xml.parsers.expat import ExpatError
 from html.entities import name2codepoint
@@ -25,6 +26,9 @@ _BLOCK_TAGS = {
     "tbody", "thead", "tfoot", "tr", "ul", "ol", "li",
 }
 _INLINE_BREAK_TAGS = {"a", "abbr", "b", "big", "cite", "code", "em", "i", "kbd", "q", "s", "small", "span", "strong", "sub", "sup", "u", "var"}
+
+_LINK_START = "\x1eLINK:"
+_LINK_END = "\x1eENDLINK\x1f"
 
 
 def _normalize_html(html_string: str) -> str:
@@ -49,20 +53,13 @@ def _normalize_html(html_string: str) -> str:
     unsafe_amp = re.compile(r"&(?!#\d+;|#x[0-9A-Fa-f]+;)")
     text = unsafe_amp.sub("&amp;", text)
 
-    # self-close void tags to help the XML parser
-    for tag in _VOID_TAGS:
-            def _self_close_void_tag(match: re.Match[str]) -> str:
-                attrs = (match.group(2) or "").rstrip()
-                attrs = re.sub(r"\s*/+$", "", attrs)
-                return f"<{match.group(1)}{attrs}/>"
-
-            text = re.sub(rf"<({tag})(\s[^<>]*?)?>", _self_close_void_tag, text, flags=re.IGNORECASE)
     # convert common boolean attributes inside tags to explicit attributes
     bool_attrs = [
         "async", "defer", "autoplay", "controls", "muted", "loop",
         "selected", "checked", "disabled", "multiple", "required",
         "hidden", "readonly", "scoped", "novalidate", "open",
         "itemscope", "allowfullscreen", "allowpaymentrequest",
+        "crossorigin",
     ]
 
     def _fix_tag(match: re.Match[str]) -> str:
@@ -78,6 +75,15 @@ def _normalize_html(html_string: str) -> str:
         return tag
 
     text = re.sub(r"<[^>]+>", _fix_tag, text)
+
+    # self-close void tags to help the XML parser
+    for tag in _VOID_TAGS:
+            def _self_close_void_tag(match: re.Match[str]) -> str:
+                attrs = (match.group(2) or "").rstrip()
+                attrs = re.sub(r"\s*/+$", "", attrs)
+                return f"<{match.group(1)}{attrs}/>"
+
+            text = re.sub(rf"<({tag})(\s[^<>]*?)?>", _self_close_void_tag, text, flags=re.IGNORECASE)
 
     return f"<document>{text}</document>"
 
@@ -135,7 +141,7 @@ def extract_title(html_string: bytes | str) -> str:
         return "document"
 
 
-def render_before(node: Any, writer: Callable[[str], None]) -> None:
+def render_before(node: Any, writer: Callable[[str], None], base_url: str | None = None) -> None:
     """Write any prefix text that should appear before a node's children."""
     if node.nodeType == node.TEXT_NODE:
         writer(node.data)
@@ -201,7 +207,8 @@ def render_before(node: Any, writer: Callable[[str], None]) -> None:
     if tag == "a":
         href = node.getAttribute("href") if node.hasAttribute("href") else ""
         if href:
-            writer("")
+            resolved_href = urljoin(base_url, href) if base_url else href
+            writer(f"{_LINK_START}{quote(resolved_href, safe=':/?#[]@!$&\'()*+,;=%')}\x1f")
         return
 
     if tag == "code" and node.parentNode is not None and getattr(node.parentNode, "tagName", "").lower() != "pre":
@@ -247,7 +254,7 @@ def containstext(node: Any) -> bool:
 
 
 
-def render_after(node: Any, writer: Callable[[str], None]) -> None:
+def render_after(node: Any, writer: Callable[[str], None], base_url: str | None = None) -> None:
     """Write any suffix text that should appear after a node's children."""
     if node.nodeType != node.ELEMENT_NODE:
         return
@@ -287,17 +294,22 @@ def render_after(node: Any, writer: Callable[[str], None]) -> None:
     if tag == "code" and node.parentNode is not None and getattr(node.parentNode, "tagName", "").lower() != "pre":
         writer("`")
 
+    if tag == "a":
+        href = node.getAttribute("href") if node.hasAttribute("href") else ""
+        if href:
+            writer(_LINK_END)
 
-def render(node: Any, writer: Callable[[str], None]) -> None:
+
+def render(node: Any, writer: Callable[[str], None], base_url: str | None = None) -> None:
     """Render a DOM node tree into plain text."""
-    render_before(node, writer)
+    render_before(node, writer, base_url)
     for child in getattr(node, "childNodes", []):
         if render_allow_children(child):
-            render(child, writer)
-    render_after(node, writer)
+            render(child, writer, base_url)
+    render_after(node, writer, base_url)
 
 
-def render_html(html_string: bytes | str) -> str:
+def render_html(html_string: bytes | str, base_url: str | None = None) -> str:
     """Render HTML input into readable plain text."""
     html_string = _ensure_utf8(html_string)
     normalized_html = _normalize_html(html_string)
@@ -313,5 +325,5 @@ def render_html(html_string: bytes | str) -> str:
         nonlocal content
         content += text
 
-    render(document, writer)
+    render(document, writer, base_url)
     return content

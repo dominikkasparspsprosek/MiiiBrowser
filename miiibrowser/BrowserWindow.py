@@ -2,6 +2,8 @@
 
 import re
 import threading
+import ssl
+import urllib.error
 import urllib.parse
 import urllib.request
 import traceback
@@ -25,6 +27,19 @@ class BrowserWindow(tk.Tk):
         ".js", ".mjs", ".cjs",
         ".ts", ".tsx", ".jsx",
         ".map", ".json",
+    }
+
+    _DEFAULT_HEADERS = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        ),
+        "Accept": (
+            "text/html,application/xhtml+xml,application/xml;q=0.9,"
+            "image/avif,image/webp,image/apng,*/*;q=0.8"
+        ),
+        "Accept-Language": "en-US,en;q=0.9",
+        "Upgrade-Insecure-Requests": "1",
     }
 
     def __init__(self) -> None:
@@ -116,12 +131,10 @@ class BrowserWindow(tk.Tk):
                 self.after(0, self._set_tab_title, "document")
                 return
 
-            req = urllib.request.Request(url, headers={"User-Agent": "MiiiBrowser/0.1"})
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                raw = resp.read()
+            raw, final_url = self._request_bytes(url)
 
             tab_title = extract_title(raw)
-            body = render_html(raw)
+            body = render_html(raw, final_url)
 
         except Exception as exc:
             print(f"Error while fetching {url}:")
@@ -143,21 +156,20 @@ class BrowserWindow(tk.Tk):
         try:
             params = urllib.parse.urlencode({"q": query, "b": ""}).encode("utf-8")
             url = "https://html.duckduckgo.com/html/"
-            req = urllib.request.Request(
+            raw, final_url = self._request_bytes(
                 url,
                 data=params,
-                headers={
-                    "User-Agent": "MiiiBrowser/0.1",
+                extra_headers={
                     "Accept-Encoding": "identity",
                     "Content-Type": "application/x-www-form-urlencoded",
+                    "Origin": "https://html.duckduckgo.com",
+                    "Referer": "https://html.duckduckgo.com/",
                 },
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                raw = resp.read()
 
             tab_title = extract_title(raw)
-            body = render_html(raw)
+            body = render_html(raw, final_url)
         except Exception as exc:
             print(f"Error while searching DuckDuckGo for {query!r}:")
             traceback.print_exc()
@@ -166,6 +178,30 @@ class BrowserWindow(tk.Tk):
 
         self.after(0, self._set_plain, body)
         self.after(0, self._set_tab_title, tab_title)
+
+    def _request_bytes(
+        self,
+        url: str,
+        data: bytes | None = None,
+        extra_headers: dict[str, str] | None = None,
+        method: str | None = None,
+    ) -> tuple[bytes, str]:
+        """Fetch bytes with browser-like headers and a no-verify SSL fallback."""
+        headers = dict(self._DEFAULT_HEADERS)
+        if extra_headers:
+            headers.update(extra_headers)
+
+        req = urllib.request.Request(url, data=data, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return resp.read(), resp.geturl()
+        except urllib.error.URLError as exc:
+            cert_error = getattr(exc, "reason", None)
+            if isinstance(cert_error, ssl.SSLCertVerificationError):
+                context = ssl._create_unverified_context()
+                with urllib.request.urlopen(req, timeout=10, context=context) as resp:
+                    return resp.read(), resp.geturl()
+            raise
 
     def _set_tab_title(self, title: str) -> None:
         """Update the active tab title label."""
@@ -188,7 +224,49 @@ class BrowserWindow(tk.Tk):
         t = self.output
         t.configure(state="normal")
         t.delete("1.0", "end")
-        t.insert("end", text, "body")
+        link_start = "\x1eLINK:"
+        link_end = "\x1eENDLINK\x1f"
+        cursor = 0
+        active_link_tag = None
+
+        while cursor < len(text):
+            if active_link_tag is None:
+                next_start = text.find(link_start, cursor)
+                if next_start == -1:
+                    t.insert("end", text[cursor:], "body")
+                    break
+
+                if next_start > cursor:
+                    t.insert("end", text[cursor:next_start], "body")
+
+                link_start_pos = next_start + len(link_start)
+                link_url_end = text.find("\x1f", link_start_pos)
+                if link_url_end == -1:
+                    t.insert("end", text[next_start:], "body")
+                    break
+
+                url = urllib.parse.unquote(text[link_start_pos:link_url_end])
+                active_link_tag = f"_render_link_{self._link_counter}"
+                self._link_counter += 1
+                t.tag_configure(active_link_tag, font=("Segoe UI", 10), foreground=ACCENT, underline=True)
+                t.tag_bind(active_link_tag, "<Enter>", lambda e: t.configure(cursor="hand2"))
+                t.tag_bind(active_link_tag, "<Leave>", lambda e: t.configure(cursor=""))
+                t.tag_bind(active_link_tag, "<Button-1>", lambda e, u=url: self._navigate(u))
+                cursor = link_url_end + 1
+                continue
+
+            next_end = text.find(link_end, cursor)
+            if next_end == -1:
+                if cursor < len(text):
+                    t.insert("end", text[cursor:], ("body", active_link_tag))
+                break
+
+            if next_end > cursor:
+                t.insert("end", text[cursor:next_end], ("body", active_link_tag))
+
+            active_link_tag = None
+            cursor = next_end + len(link_end)
+
         t.configure(state="disabled")
 
     def _render_ddg(self, d: dict) -> None:
