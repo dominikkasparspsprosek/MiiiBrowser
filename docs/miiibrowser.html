@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>miiibrowser package &#8212; miiibrowser  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="miiibrowser documentation" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="miiibrowser-package">
+<h1>miiibrowser package<a class="headerlink" href="#miiibrowser-package" title="Link to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-miiibrowser.BrowserWindow">
+<span id="miiibrowser-browserwindow-module"></span><h2>miiibrowser.BrowserWindow module<a class="headerlink" href="#module-miiibrowser.BrowserWindow" title="Link to this heading">¶</a></h2>
+<p>Main browser window and navigation workflow for MiiiBrowser.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="miiibrowser.BrowserWindow.BrowserWindow">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">miiibrowser.BrowserWindow.</span></span><span class="sig-name descname"><span class="pre">BrowserWindow</span></span><a class="reference internal" href="_modules/miiibrowser/BrowserWindow.html#BrowserWindow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.BrowserWindow.BrowserWindow" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tk</span></code></p>
+<p>Top-level Tk window that hosts tabs, navigation, and content.</p>
+</dd></dl>
+
+</section>
+<section id="module-miiibrowser.charset_parser">
+<span id="miiibrowser-charset-parser-module"></span><h2>miiibrowser.charset_parser module<a class="headerlink" href="#module-miiibrowser.charset_parser" title="Link to this heading">¶</a></h2>
+<p>Local HTML charset detection and decoding helpers.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="miiibrowser.charset_parser.decode_html">
+<span class="sig-prename descclassname"><span class="pre">miiibrowser.charset_parser.</span></span><span class="sig-name descname"><span class="pre">decode_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">html_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/miiibrowser/charset_parser.html#decode_html"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.charset_parser.decode_html" title="Link to this definition">¶</a></dt>
+<dd><p>Decode HTML bytes to text using the local sniffing heuristics.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="miiibrowser.charset_parser.sniff_encoding">
+<span class="sig-prename descclassname"><span class="pre">miiibrowser.charset_parser.</span></span><span class="sig-name descname"><span class="pre">sniff_encoding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">html_bytes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/miiibrowser/charset_parser.html#sniff_encoding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.charset_parser.sniff_encoding" title="Link to this definition">¶</a></dt>
+<dd><p>Guess the most likely HTML encoding from BOM and in-band hints.</p>
+</dd></dl>
+
+</section>
+<section id="module-miiibrowser.colors">
+<span id="miiibrowser-colors-module"></span><h2>miiibrowser.colors module<a class="headerlink" href="#module-miiibrowser.colors" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-miiibrowser.dom_html_parser">
+<span id="miiibrowser-dom-html-parser-module"></span><h2>miiibrowser.dom_html_parser module<a class="headerlink" href="#module-miiibrowser.dom_html_parser" title="Link to this heading">¶</a></h2>
+<p>HTML normalization and text rendering helpers for MiiiBrowser.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="miiibrowser.dom_html_parser.containstext">
+<span class="sig-prename descclassname"><span class="pre">miiibrowser.dom_html_parser.</span></span><span class="sig-name descname"><span class="pre">containstext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/miiibrowser/dom_html_parser.html#containstext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.dom_html_parser.containstext" title="Link to this definition">¶</a></dt>
+<dd><p>Check whether the node has any non-empty text children.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="miiibrowser.dom_html_parser.extract_title">
+<span class="sig-prename descclassname"><span class="pre">miiibrowser.dom_html_parser.</span></span><span class="sig-name descname"><span class="pre">extract_title</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">html_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/miiibrowser/dom_html_parser.html#extract_title"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.dom_html_parser.extract_title" title="Link to this definition">¶</a></dt>
+<dd><p>Return a cleaned document title or a fallback label.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="miiibrowser.dom_html_parser.render">
+<span class="sig-prename descclassname"><span class="pre">miiibrowser.dom_html_parser.</span></span><span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">writer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/miiibrowser/dom_html_parser.html#render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.dom_html_parser.render" title="Link to this definition">¶</a></dt>
+<dd><p>Render a DOM node tree into plain text.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="miiibrowser.dom_html_parser.render_after">
+<span class="sig-prename descclassname"><span class="pre">miiibrowser.dom_html_parser.</span></span><span class="sig-name descname"><span class="pre">render_after</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">writer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/miiibrowser/dom_html_parser.html#render_after"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.dom_html_parser.render_after" title="Link to this definition">¶</a></dt>
+<dd><p>Write any suffix text that should appear after a node’s children.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="miiibrowser.dom_html_parser.render_allow_children">
+<span class="sig-prename descclassname"><span class="pre">miiibrowser.dom_html_parser.</span></span><span class="sig-name descname"><span class="pre">render_allow_children</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/miiibrowser/dom_html_parser.html#render_allow_children"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.dom_html_parser.render_allow_children" title="Link to this definition">¶</a></dt>
+<dd><p>Return whether the renderer should recurse into this node.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="miiibrowser.dom_html_parser.render_before">
+<span class="sig-prename descclassname"><span class="pre">miiibrowser.dom_html_parser.</span></span><span class="sig-name descname"><span class="pre">render_before</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">writer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/miiibrowser/dom_html_parser.html#render_before"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.dom_html_parser.render_before" title="Link to this definition">¶</a></dt>
+<dd><p>Write any prefix text that should appear before a node’s children.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="miiibrowser.dom_html_parser.render_html">
+<span class="sig-prename descclassname"><span class="pre">miiibrowser.dom_html_parser.</span></span><span class="sig-name descname"><span class="pre">render_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">html_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/miiibrowser/dom_html_parser.html#render_html"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.dom_html_parser.render_html" title="Link to this definition">¶</a></dt>
+<dd><p>Render HTML input into readable plain text.</p>
+</dd></dl>
+
+</section>
+<section id="module-miiibrowser.tab_bar">
+<span id="miiibrowser-tab-bar-module"></span><h2>miiibrowser.tab_bar module<a class="headerlink" href="#module-miiibrowser.tab_bar" title="Link to this heading">¶</a></h2>
+<p>Tab bar and toolbar widgets for the MiiiBrowser window.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="miiibrowser.tab_bar.TabBar">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">miiibrowser.tab_bar.</span></span><span class="sig-name descname"><span class="pre">TabBar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">master</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Misc</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/miiibrowser/tab_bar.html#TabBar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.tab_bar.TabBar" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Frame</span></code></p>
+<p>Simple tab strip with a single active tab and a new-tab button.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="miiibrowser.tab_bar.Toolbar">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">miiibrowser.tab_bar.</span></span><span class="sig-name descname"><span class="pre">Toolbar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">master</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Misc</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/miiibrowser/tab_bar.html#Toolbar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.tab_bar.Toolbar" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Frame</span></code></p>
+<p>Navigation buttons + URL / search bar.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="miiibrowser.tab_bar.Toolbar.on_navigate">
+<span class="sig-name descname"><span class="pre">on_navigate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/miiibrowser/tab_bar.html#Toolbar.on_navigate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.tab_bar.Toolbar.on_navigate" title="Link to this definition">¶</a></dt>
+<dd><p>Callback invoked when the user submits the URL/search field.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-miiibrowser.treeHTMLParser">
+<span id="miiibrowser-treehtmlparser-module"></span><h2>miiibrowser.treeHTMLParser module<a class="headerlink" href="#module-miiibrowser.treeHTMLParser" title="Link to this heading">¶</a></h2>
+<p>Lightweight HTML parser that builds a tree of visible and hidden nodes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="miiibrowser.treeHTMLParser.TreeHTMLParser">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">miiibrowser.treeHTMLParser.</span></span><span class="sig-name descname"><span class="pre">TreeHTMLParser</span></span><a class="reference internal" href="_modules/miiibrowser/treeHTMLParser.html#TreeHTMLParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.treeHTMLParser.TreeHTMLParser" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">HTMLParser</span></code></p>
+<p>Parse HTML into a simple nested dictionary structure.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="miiibrowser.treeHTMLParser.TreeHTMLParser.handle_data">
+<span class="sig-name descname"><span class="pre">handle_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/miiibrowser/treeHTMLParser.html#TreeHTMLParser.handle_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.treeHTMLParser.TreeHTMLParser.handle_data" title="Link to this definition">¶</a></dt>
+<dd><p>Store text nodes after collapsing internal whitespace.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="miiibrowser.treeHTMLParser.TreeHTMLParser.handle_endtag">
+<span class="sig-name descname"><span class="pre">handle_endtag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/miiibrowser/treeHTMLParser.html#TreeHTMLParser.handle_endtag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.treeHTMLParser.TreeHTMLParser.handle_endtag" title="Link to this definition">¶</a></dt>
+<dd><p>Handle the end of an HTML element.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="miiibrowser.treeHTMLParser.TreeHTMLParser.handle_starttag">
+<span class="sig-name descname"><span class="pre">handle_starttag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/miiibrowser/treeHTMLParser.html#TreeHTMLParser.handle_starttag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#miiibrowser.treeHTMLParser.TreeHTMLParser.handle_starttag" title="Link to this definition">¶</a></dt>
+<dd><p>Handle the start of an HTML element.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-miiibrowser">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-miiibrowser" title="Link to this heading">¶</a></h2>
+<p>MiiiBrowser package.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">miiibrowser</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">miiibrowser package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-miiibrowser.BrowserWindow">miiibrowser.BrowserWindow module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.BrowserWindow.BrowserWindow"><code class="docutils literal notranslate"><span class="pre">BrowserWindow</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-miiibrowser.charset_parser">miiibrowser.charset_parser module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.charset_parser.decode_html"><code class="docutils literal notranslate"><span class="pre">decode_html()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.charset_parser.sniff_encoding"><code class="docutils literal notranslate"><span class="pre">sniff_encoding()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-miiibrowser.colors">miiibrowser.colors module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-miiibrowser.dom_html_parser">miiibrowser.dom_html_parser module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.dom_html_parser.containstext"><code class="docutils literal notranslate"><span class="pre">containstext()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.dom_html_parser.extract_title"><code class="docutils literal notranslate"><span class="pre">extract_title()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.dom_html_parser.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.dom_html_parser.render_after"><code class="docutils literal notranslate"><span class="pre">render_after()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.dom_html_parser.render_allow_children"><code class="docutils literal notranslate"><span class="pre">render_allow_children()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.dom_html_parser.render_before"><code class="docutils literal notranslate"><span class="pre">render_before()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.dom_html_parser.render_html"><code class="docutils literal notranslate"><span class="pre">render_html()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-miiibrowser.tab_bar">miiibrowser.tab_bar module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.tab_bar.TabBar"><code class="docutils literal notranslate"><span class="pre">TabBar</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.tab_bar.Toolbar"><code class="docutils literal notranslate"><span class="pre">Toolbar</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#miiibrowser.tab_bar.Toolbar.on_navigate"><code class="docutils literal notranslate"><span class="pre">Toolbar.on_navigate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-miiibrowser.treeHTMLParser">miiibrowser.treeHTMLParser module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#miiibrowser.treeHTMLParser.TreeHTMLParser"><code class="docutils literal notranslate"><span class="pre">TreeHTMLParser</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#miiibrowser.treeHTMLParser.TreeHTMLParser.handle_data"><code class="docutils literal notranslate"><span class="pre">TreeHTMLParser.handle_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#miiibrowser.treeHTMLParser.TreeHTMLParser.handle_endtag"><code class="docutils literal notranslate"><span class="pre">TreeHTMLParser.handle_endtag()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#miiibrowser.treeHTMLParser.TreeHTMLParser.handle_starttag"><code class="docutils literal notranslate"><span class="pre">TreeHTMLParser.handle_starttag()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-miiibrowser">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">miiibrowser documentation</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Author.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/miiibrowser.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

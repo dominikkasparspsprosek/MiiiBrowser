@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>miiibrowser.tab_bar &#8212; miiibrowser  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for miiibrowser.tab_bar</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Tab bar and toolbar widgets for the MiiiBrowser window.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">tkinter</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tk</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">ACCENT</span><span class="p">,</span> <span class="n">BG_TAB_ACTIVE</span><span class="p">,</span> <span class="n">BG_TITLEBAR</span><span class="p">,</span> <span class="n">BG_TOOLBAR</span><span class="p">,</span> <span class="n">BG_URLBAR</span><span class="p">,</span> <span class="n">FG_DIM</span><span class="p">,</span> <span class="n">FG_TEXT</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">ACCENT</span><span class="p">,</span> <span class="n">BG_TAB_ACTIVE</span><span class="p">,</span> <span class="n">BG_TITLEBAR</span><span class="p">,</span> <span class="n">BG_TOOLBAR</span><span class="p">,</span> <span class="n">BG_URLBAR</span><span class="p">,</span> <span class="n">FG_DIM</span><span class="p">,</span> <span class="n">FG_TEXT</span>
+
+
+<div class="viewcode-block" id="TabBar">
+<a class="viewcode-back" href="../../miiibrowser.html#miiibrowser.tab_bar.TabBar">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TabBar</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">Frame</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple tab strip with a single active tab and a new-tab button.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">:</span> <span class="n">tk</span><span class="o">.</span><span class="n">Misc</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">master</span><span class="p">,</span> <span class="n">bg</span><span class="o">=</span><span class="n">BG_TITLEBAR</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_build</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct the initial tab strip widgets.&quot;&quot;&quot;</span>
+        <span class="c1"># one default tab</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_tab</span><span class="p">(</span><span class="s2">&quot;New Tab&quot;</span><span class="p">)</span>
+
+        <span class="c1"># &#39;+&#39; button</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_btn</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot; + &quot;</span><span class="p">,</span> <span class="n">font</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Segoe UI&quot;</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span>
+            <span class="n">bg</span><span class="o">=</span><span class="n">BG_TITLEBAR</span><span class="p">,</span> <span class="n">fg</span><span class="o">=</span><span class="n">FG_DIM</span><span class="p">,</span> <span class="n">cursor</span><span class="o">=</span><span class="s2">&quot;hand2&quot;</span><span class="p">,</span>
+            <span class="n">padx</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_btn</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_add_tab</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create and store a tab label for the given title.&quot;&quot;&quot;</span>
+        <span class="n">tab</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">  &quot;</span><span class="p">,</span> <span class="n">font</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Segoe UI&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+            <span class="n">bg</span><span class="o">=</span><span class="n">BG_TAB_ACTIVE</span><span class="p">,</span> <span class="n">fg</span><span class="o">=</span><span class="n">FG_TEXT</span><span class="p">,</span>
+            <span class="n">padx</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">relief</span><span class="o">=</span><span class="s2">&quot;flat&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">tab</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">pady</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tab</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Toolbar">
+<a class="viewcode-back" href="../../miiibrowser.html#miiibrowser.tab_bar.Toolbar">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Toolbar</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">Frame</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Navigation buttons + URL / search bar.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">:</span> <span class="n">tk</span><span class="o">.</span><span class="n">Misc</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">master</span><span class="p">,</span> <span class="n">bg</span><span class="o">=</span><span class="n">BG_TOOLBAR</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_build</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct the toolbar controls and search entry.&quot;&quot;&quot;</span>
+        <span class="n">btn_cfg</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">font</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Segoe UI&quot;</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span> <span class="n">bg</span><span class="o">=</span><span class="n">BG_TOOLBAR</span><span class="p">,</span> <span class="n">fg</span><span class="o">=</span><span class="n">FG_DIM</span><span class="p">,</span>
+            <span class="n">bd</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cursor</span><span class="o">=</span><span class="s2">&quot;hand2&quot;</span><span class="p">,</span>
+            <span class="n">activebackground</span><span class="o">=</span><span class="n">BG_TOOLBAR</span><span class="p">,</span> <span class="n">activeforeground</span><span class="o">=</span><span class="n">FG_TEXT</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># back / forward / reload</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_back</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_forward</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_reload</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;←&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_back</span><span class="p">(),</span> <span class="o">**</span><span class="n">btn_cfg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">forward_btn</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;→&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_forward</span><span class="p">(),</span> <span class="o">**</span><span class="n">btn_cfg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forward_btn</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">reload_btn</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;⟳&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_reload</span><span class="p">(),</span> <span class="o">**</span><span class="n">btn_cfg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reload_btn</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># start disabled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="s2">&quot;disabled&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forward_btn</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="s2">&quot;disabled&quot;</span><span class="p">)</span>
+
+        <span class="c1"># URL / search bar</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">url_var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">textvariable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">url_var</span><span class="p">,</span>
+            <span class="n">font</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Segoe UI&quot;</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span> <span class="n">bg</span><span class="o">=</span><span class="n">BG_URLBAR</span><span class="p">,</span> <span class="n">fg</span><span class="o">=</span><span class="n">FG_TEXT</span><span class="p">,</span>
+            <span class="n">insertbackground</span><span class="o">=</span><span class="n">FG_TEXT</span><span class="p">,</span> <span class="n">relief</span><span class="o">=</span><span class="s2">&quot;flat&quot;</span><span class="p">,</span>
+            <span class="n">highlightthickness</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">highlightcolor</span><span class="o">=</span><span class="n">ACCENT</span><span class="p">,</span>
+            <span class="n">highlightbackground</span><span class="o">=</span><span class="s2">&quot;#5f6368&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">ipady</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+
+        <span class="c1"># placeholder behaviour</span>
+        <span class="n">placeholder</span> <span class="o">=</span> <span class="s2">&quot;Search DuckDuckGo or type a URL&quot;</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">placeholder</span><span class="p">)</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">fg</span><span class="o">=</span><span class="n">FG_DIM</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_on_focus_in</span><span class="p">(</span><span class="n">e</span><span class="p">:</span> <span class="n">tk</span><span class="o">.</span><span class="n">Event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">==</span> <span class="n">placeholder</span><span class="p">:</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;end&quot;</span><span class="p">)</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">fg</span><span class="o">=</span><span class="n">FG_TEXT</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_on_focus_out</span><span class="p">(</span><span class="n">e</span><span class="p">:</span> <span class="n">tk</span><span class="o">.</span><span class="n">Event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">placeholder</span><span class="p">)</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">fg</span><span class="o">=</span><span class="n">FG_DIM</span><span class="p">)</span>
+
+        <span class="n">entry</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;FocusIn&gt;&quot;</span><span class="p">,</span> <span class="n">_on_focus_in</span><span class="p">)</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;FocusOut&gt;&quot;</span><span class="p">,</span> <span class="n">_on_focus_out</span><span class="p">)</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;Return&gt;&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_navigate</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entry</span> <span class="o">=</span> <span class="n">entry</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">placeholder</span> <span class="o">=</span> <span class="n">placeholder</span>
+
+<div class="viewcode-block" id="Toolbar.on_navigate">
+<a class="viewcode-back" href="../../miiibrowser.html#miiibrowser.tab_bar.Toolbar.on_navigate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_navigate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Callback invoked when the user submits the URL/search field.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">miiibrowser</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../miiibrowser.html">miiibrowser package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Author.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

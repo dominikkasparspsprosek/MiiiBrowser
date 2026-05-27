@@ -1,0 +1,2 @@
+"""MiiiBrowser package."""
+

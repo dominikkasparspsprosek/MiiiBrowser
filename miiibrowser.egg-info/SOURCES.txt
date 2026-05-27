@@ -1,8 +1,15 @@
 LICENSE
 README.md
 pyproject.toml
+miiibrowser/BrowserWindow.py
 miiibrowser/__init__.py
 miiibrowser/__main__.py
+miiibrowser/browserWindow.py
+miiibrowser/charset_parser.py
+miiibrowser/colors.py
+miiibrowser/dom_html_parser.py
+miiibrowser/tab_bar.py
+miiibrowser/treeHTMLParser.py
 miiibrowser.egg-info/PKG-INFO
 miiibrowser.egg-info/SOURCES.txt
 miiibrowser.egg-info/dependency_links.txt

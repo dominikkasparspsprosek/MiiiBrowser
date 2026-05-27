@@ -11,6 +11,11 @@ license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [
     "tkinterweb",
+    "sphinx>=8",
+]
+
+[project.optional-dependencies]
+docs = [
 ]
 
 [project.scripts]
