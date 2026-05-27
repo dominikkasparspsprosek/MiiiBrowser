@@ -1,6 +1,5 @@
 """Main browser window and navigation workflow for MiiiBrowser."""
 
-import json
 import re
 import threading
 import urllib.parse
@@ -140,41 +139,33 @@ class BrowserWindow(tk.Tk):
         return any(path.endswith(ext) for ext in self._BLOCKED_ASSET_EXTENSIONS)
 
     def _fetch_ddg(self, query: str) -> None:
-        """Resolve a DuckDuckGo query to a likely target URL."""
+        """Fetch DuckDuckGo HTML search results and render them directly."""
         try:
-            params = urllib.parse.urlencode({"q": query, "format": "json", "no_html": "1"})
-            url = f"https://api.duckduckgo.com/?{params}"
-            req = urllib.request.Request(url, headers={"User-Agent": "MiiiBrowser/0.1"})
+            params = urllib.parse.urlencode({"q": query, "b": ""}).encode("utf-8")
+            url = "https://html.duckduckgo.com/html/"
+            req = urllib.request.Request(
+                url,
+                data=params,
+                headers={
+                    "User-Agent": "MiiiBrowser/0.1",
+                    "Accept-Encoding": "identity",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                method="POST",
+            )
             with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode("utf-8", errors="replace"))
+                raw = resp.read()
+
+            tab_title = extract_title(raw)
+            body = render_html(raw)
         except Exception as exc:
             print(f"Error while searching DuckDuckGo for {query!r}:")
             traceback.print_exc()
             self.after(0, self._set_plain, f"Error: {exc}")
             return
 
-        # find the first usable URL: direct results first, then related topics
-        first_url = None
-        for item in data.get("Results", []):
-            if item.get("FirstURL"):
-                first_url = item["FirstURL"]
-                break
-        if not first_url:
-            for item in data.get("RelatedTopics", []):
-                if item.get("FirstURL"):
-                    first_url = item["FirstURL"]
-                    break
-                for sub in item.get("Topics", []):
-                    if sub.get("FirstURL"):
-                        first_url = sub["FirstURL"]
-                        break
-                if first_url:
-                    break
-
-        if first_url:
-            self.after(0, self._navigate, first_url)
-        else:
-            self.after(0, self._set_plain, "No results found.")
+        self.after(0, self._set_plain, body)
+        self.after(0, self._set_tab_title, tab_title)
 
     def _set_tab_title(self, title: str) -> None:
         """Update the active tab title label."""
