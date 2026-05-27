@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable
 from xml.dom.minidom import Node, parseString
+from xml.parsers.expat import ExpatError
 from html.entities import name2codepoint
 
 try:
@@ -89,6 +90,25 @@ def _normalize_html(html_string: str) -> str:
 def _ensure_utf8(html_input: bytes | str) -> str:
     """Decode HTML bytes using the local charset parser."""
     return decode_html(html_input)
+
+
+def _log_parse_error_context(html_string: str, exc: Exception) -> None:
+    """Print a small excerpt around an XML parse error to the console."""
+    line_no = getattr(exc, "lineno", None)
+    column_no = getattr(exc, "offset", None)
+    if not isinstance(line_no, int) or line_no < 1:
+        print(f"Parse error context unavailable: {exc}")
+        return
+
+    lines = html_string.splitlines() or [html_string]
+    if line_no > len(lines):
+        line_no = len(lines)
+
+    line_text = lines[line_no - 1]
+    print(f"Parse error at line {line_no}, column {column_no or '?'}")
+    print(line_text)
+    if isinstance(column_no, int) and column_no > 0:
+        print(" " * max(0, column_no - 1) + "^")
 
 
 def extract_title(html_string: bytes | str) -> str:
@@ -275,7 +295,13 @@ def render(node: Any, writer: Callable[[str], None]) -> None:
 def render_html(html_string: bytes | str) -> str:
     """Render HTML input into readable plain text."""
     html_string = _ensure_utf8(html_string)
-    document = parseString(_normalize_html(html_string))
+    normalized_html = _normalize_html(html_string)
+    try:
+        document = parseString(normalized_html)
+    except ExpatError as exc:
+        print(f"HTML parse failed: {exc}")
+        _log_parse_error_context(normalized_html, exc)
+        raise
     content = ""
 
     def writer(text: str):

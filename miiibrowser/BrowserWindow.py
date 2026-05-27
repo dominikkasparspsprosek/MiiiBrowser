@@ -5,6 +5,7 @@ import re
 import threading
 import urllib.parse
 import urllib.request
+import traceback
 
 import tkinter as tk
 
@@ -113,6 +114,8 @@ class BrowserWindow(tk.Tk):
             body = render_html(raw)
 
         except Exception as exc:
+            print(f"Error while fetching {url}:")
+            traceback.print_exc()
             body = f"Error: {exc}"
             tab_title = "document"
 
@@ -128,6 +131,8 @@ class BrowserWindow(tk.Tk):
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode("utf-8", errors="replace"))
         except Exception as exc:
+            print(f"Error while searching DuckDuckGo for {query!r}:")
+            traceback.print_exc()
             self.after(0, self._set_plain, f"Error: {exc}")
             return
 
