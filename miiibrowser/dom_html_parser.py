@@ -14,6 +14,11 @@ try:
 except ImportError:
     from charset_parser import decode_html
 
+try:
+    from .treeHTMLParser import TreeHTMLParser
+except ImportError:
+    from treeHTMLParser import TreeHTMLParser
+
 _VOID_TAGS = {
     "area", "base", "br", "col", "embed", "hr", "img", "input",
     "link", "meta", "param", "source", "track", "wbr",
@@ -300,6 +305,118 @@ def render_after(node: Any, writer: Callable[[str], None], base_url: str | None 
             writer(_LINK_END)
 
 
+def _render_tree_before(node: dict[str, Any], writer: Callable[[str], None], base_url: str | None = None) -> None:
+    """Render prefix text for tolerant tree nodes."""
+    if node.get("type") == "text":
+        writer(node.get("value", ""))
+        return
+
+    if node.get("type") != "element":
+        return
+
+    tag = str(node.get("tag", "")).lower()
+    attrs = node.get("attrs", {}) or {}
+
+    if tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
+        writer("\n-----------------------\n")
+        return
+
+    if tag == "table":
+        writer("-----------------------\n")
+        return
+
+    if tag in {"ul", "ol"}:
+        writer("\n")
+        return
+
+    if tag == "li":
+        writer("- ")
+        return
+
+    if tag == "blockquote":
+        writer("> ")
+        return
+
+    if tag == "hr":
+        writer("\n-----------------------\n")
+        return
+
+    if tag == "br":
+        writer("\n")
+        return
+
+    if tag == "img":
+        label = attrs.get("alt") or attrs.get("src") or "image"
+        writer(f"[image: {label}]")
+        return
+
+    if tag == "a":
+        href = attrs.get("href") or ""
+        if href:
+            resolved_href = urljoin(base_url, href) if base_url else href
+            writer(f"{_LINK_START}{quote(resolved_href, safe=':/?#[]@!$&\'()*+,;=%')}\x1f")
+        return
+
+    if tag == "code" and str(node.get("parent_tag", "")).lower() != "pre":
+        writer("`")
+        return
+
+    if tag in {"input", "textarea", "select", "button", "label"}:
+        if tag == "label":
+            writer("[label] ")
+        elif tag == "button":
+            label = attrs.get("value") or "button"
+            writer(f"[button: {label}] ")
+        else:
+            input_type = attrs.get("type") or tag
+            name = attrs.get("name") or ""
+            placeholder = attrs.get("placeholder") or ""
+            details = ", ".join(part for part in [name and f"name={name}", placeholder and f"placeholder={placeholder}"] if part)
+            writer(f"[{input_type}{': ' + details if details else ''}] ")
+
+
+def _render_tree_after(node: dict[str, Any], writer: Callable[[str], None], base_url: str | None = None) -> None:
+    """Render suffix text for tolerant tree nodes."""
+    if node.get("type") != "element":
+        return
+
+    tag = str(node.get("tag", "")).lower()
+
+    if tag in {"p", "div", "section", "article", "aside", "main", "header", "footer", "nav", "tr", "li", "table", "blockquote", "pre", "form", "fieldset"}:
+        writer("\n")
+        return
+
+    if tag == "code" and str(node.get("parent_tag", "")).lower() != "pre":
+        writer("`")
+
+    if tag == "a":
+        href = (node.get("attrs", {}) or {}).get("href") or ""
+        if href:
+            writer(_LINK_END)
+
+
+def _render_tree(node: dict[str, Any], writer: Callable[[str], None], base_url: str | None = None, parent_tag: str = "") -> None:
+    """Render a tolerant tree built by TreeHTMLParser."""
+    if node.get("type") == "text":
+        writer(node.get("value", ""))
+        return
+
+    if node.get("type") != "element" and node.get("type") != "root":
+        return
+
+    if node.get("type") == "element":
+        node = dict(node)
+        node["parent_tag"] = parent_tag
+        _render_tree_before(node, writer, base_url)
+
+    for child in node.get("children", []):
+        if isinstance(child, dict):
+            _render_tree(child, writer, base_url, str(node.get("tag", "")) if node.get("type") == "element" else parent_tag)
+
+    if node.get("type") == "element":
+        _render_tree_after(node, writer, base_url)
+
+
 def render(node: Any, writer: Callable[[str], None], base_url: str | None = None) -> None:
     """Render a DOM node tree into plain text."""
     render_before(node, writer, base_url)
@@ -318,7 +435,22 @@ def render_html(html_string: bytes | str, base_url: str | None = None) -> str:
     except ExpatError as exc:
         print(f"HTML parse failed: {exc}")
         _log_parse_error_context(normalized_html, exc)
-        raise
+        try:
+            parser = TreeHTMLParser()
+            parser.feed(normalized_html)
+            parser.close()
+        except Exception as fallback_exc:
+            print(f"HTML fallback parse failed: {fallback_exc}")
+            return ""
+
+        content = ""
+
+        def writer(text: str):
+            nonlocal content
+            content += text
+
+        _render_tree(parser.root, writer, base_url)
+        return content
     content = ""
 
     def writer(text: str):
