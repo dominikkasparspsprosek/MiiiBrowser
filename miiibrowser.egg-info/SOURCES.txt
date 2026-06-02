@@ -9,10 +9,10 @@ miiibrowser/charset_parser.py
 miiibrowser/colors.py
 miiibrowser/dom_html_parser.py
 miiibrowser/tab_bar.py
-miiibrowser/treeHTMLParser.py
 miiibrowser.egg-info/PKG-INFO
 miiibrowser.egg-info/SOURCES.txt
 miiibrowser.egg-info/dependency_links.txt
 miiibrowser.egg-info/entry_points.txt
 miiibrowser.egg-info/requires.txt
 miiibrowser.egg-info/top_level.txt
+miiibrowser/oldahh/treeHTMLParser.py

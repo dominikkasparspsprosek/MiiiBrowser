@@ -1,11 +1,7 @@
 """Tab bar and toolbar widgets for the MiiiBrowser window."""
 
 import tkinter as tk
-
-try:
-    from .colors import ACCENT, BG_TAB_ACTIVE, BG_TITLEBAR, BG_TOOLBAR, BG_URLBAR, FG_DIM, FG_TEXT
-except ImportError:
-    from colors import ACCENT, BG_TAB_ACTIVE, BG_TITLEBAR, BG_TOOLBAR, BG_URLBAR, FG_DIM, FG_TEXT
+from colors import ACCENT, BG_TAB_ACTIVE, BG_TITLEBAR, BG_TOOLBAR, BG_URLBAR, FG_DIM, FG_TEXT
 
 
 class TabBar(tk.Frame):
