@@ -1,4 +1,4 @@
-tkinterweb
+Pillow
 sphinx>=8
 
 [docs]

@@ -30,9 +30,43 @@ _INLINE_BREAK_TAGS = {"a", "abbr", "b", "big", "cite", "code", "em", "i", "kbd",
 _LINK_START = "\x1eLINK:"
 _LINK_END = "\x1eENDLINK\x1f"
 
+# Image sentinel. Mirrors the link-sentinel scheme so the Tk renderer can locate
+# <img> nodes inside the otherwise-plain-text output and swap in real pictures:
+#   _IMG_START + quote(resolved_src) + _IMG_SEP + alt + _IMG_END
+_IMG_START = "\x1eIMG:"
+_IMG_SEP = "\x1f"
+_IMG_END = "\x1e/IMG\x1f"
+
+# Robustness guards (Req 6): bound worst-case work on huge / hostile documents.
+_MAX_RENDER_DEPTH = 500          # cap DOM recursion to avoid RecursionError
+_MAX_NORMALIZE_INPUT = 3_000_000  # ~3 MB cap on the regex normalization passes
+
+
+def _image_marker(src: str, alt: str, base_url: str | None) -> str:
+    """Build the image sentinel for an <img> source.
+
+    Emits the sentinel when ``src`` is present (resolved against ``base_url``),
+    or a plain ``[image: alt]`` placeholder otherwise so alt-only images still
+    render. Sentinel control characters are stripped from ``alt`` so user text
+    can never corrupt the marker.
+    """
+    alt = (alt or "").replace("\x1e", " ").replace("\x1f", " ").strip()
+    if not src:
+        return f"[image: {alt or 'image'}]"
+    resolved = urljoin(base_url, src) if base_url else src
+    return (
+        f"{_IMG_START}{quote(resolved, safe=':/?#[]@!$&\'()*+,;=%')}"
+        f"{_IMG_SEP}{alt}{_IMG_END}"
+    )
+
+
 def _normalize_html(html_string: str) -> str:
     """Preprocess HTML so the XML parser can consume it safely."""
     text = html_string.lstrip("\ufeff")
+    # Bound worst-case latency of the regex passes below on pathologically large
+    # input (the render runs on a worker thread; the page still shows, clipped).
+    if len(text) > _MAX_NORMALIZE_INPUT:
+        text = text[:_MAX_NORMALIZE_INPUT]
     text = re.sub(r"<!DOCTYPE[^>]*>", "", text, flags=re.IGNORECASE)
 
     for tag in _INVISIBLE_TAGS:
@@ -158,8 +192,7 @@ class _LenientHTMLParser(HTMLParser):
             self._emit("\n")
             return
         elif tag == "img":
-            label = attrs.get("alt") or attrs.get("src") or "image"
-            self._emit(f"[image: {label}]")
+            self._emit(_image_marker(attrs.get("src") or "", attrs.get("alt") or "", self._base_url))
             return
         elif tag == "a":
             href = attrs.get("href") or ""
@@ -305,7 +338,7 @@ def render_before(node: Any, writer: Callable[[str], None], base_url: str | None
     if node.nodeType != node.ELEMENT_NODE:
         return
 
-    tag = node.tagName.lower()
+    tag = getattr(node, "tagName", "").lower()
 
     if tag == "head":
         title_nodes = node.getElementsByTagName("title")
@@ -355,8 +388,7 @@ def render_before(node: Any, writer: Callable[[str], None], base_url: str | None
     if tag == "img":
         alt_text = node.getAttribute("alt") if node.hasAttribute("alt") else ""
         src = node.getAttribute("src") if node.hasAttribute("src") else ""
-        label = alt_text or src or "image"
-        writer(f"[image: {label}]")
+        writer(_image_marker(src, alt_text, base_url))
         return
 
     if tag == "a":
@@ -390,7 +422,7 @@ def render_allow_children(node: Any) -> bool:
     if node.nodeType != node.ELEMENT_NODE:
         return True
 
-    tag = node.tagName.lower()
+    tag = getattr(node, "tagName", "").lower()
     if tag in _INVISIBLE_TAGS:
         return False
     if tag == "head":
@@ -414,7 +446,7 @@ def render_after(node: Any, writer: Callable[[str], None], base_url: str | None 
     if node.nodeType != node.ELEMENT_NODE:
         return
 
-    tag = node.tagName.lower()
+    tag = getattr(node, "tagName", "").lower()
 
     if tag in {"p", "div", "section", "article", "aside", "main", "header", "footer", "nav"}:
       if (containstext(node)):
@@ -455,43 +487,94 @@ def render_after(node: Any, writer: Callable[[str], None], base_url: str | None 
             writer(_LINK_END)
 
 
-def render(node: Any, writer: Callable[[str], None], base_url: str | None = None) -> None:
-    """Render a DOM node tree into plain text."""
+def _is_suppressed_subtree(node: Any) -> bool:
+    """Nodes whose entire subtree produces no output (scripts, styles, head)."""
+    if node.nodeType != node.ELEMENT_NODE:
+        return False
+    tag = getattr(node, "tagName", "").lower()
+    return tag in _INVISIBLE_TAGS or tag == "head"
+
+
+def render(node: Any, writer: Callable[[str], None], base_url: str | None = None, _depth: int = 0) -> None:
+    """Render a DOM node tree into plain text.
+
+    Descent is gated per node (not per child) so void elements such as ``<img>``,
+    ``<br>``, ``<hr>`` and ``<input>`` still get their own ``render_before`` —
+    they emit content (e.g. the image sentinel) but have no children to descend
+    into. ``_depth`` guards against pathologically deep documents triggering a
+    ``RecursionError`` (graceful degradation past the cap).
+    """
+    if _depth > _MAX_RENDER_DEPTH:
+        return
+    if _is_suppressed_subtree(node):
+        return
     render_before(node, writer, base_url)
-    for child in getattr(node, "childNodes", []):
-        if render_allow_children(child):
-            render(child, writer, base_url)
+    if render_allow_children(node):
+        for child in getattr(node, "childNodes", []):
+            render(child, writer, base_url, _depth + 1)
     render_after(node, writer, base_url)
 
 
+def _render_with_lenient_parser(normalized_html: str, base_url: str | None) -> str:
+    """Stream already-normalized HTML through the lenient parser to text.
+
+    Shared fallback for both a failed strict XML parse and a failed DOM render
+    walk, so a single code path handles every degradation. Never raises; returns
+    whatever text was accumulated.
+    """
+    content = ""
+
+    def writer(text: str) -> None:
+        nonlocal content
+        content += text
+
+    try:
+        parser = _LenientHTMLParser(writer, base_url)
+        parser.feed(normalized_html)
+        parser.close()
+    except Exception as fallback_exc:  # pragma: no cover - defensive
+        print(f"HTML fallback parse failed: {fallback_exc}")
+    return content
+
+
 def render_html(html_string: bytes | str, base_url: str | None = None) -> str:
-    """Render HTML input into readable plain text."""
-    html_string = _ensure_utf8(html_string)
-    normalized_html = _normalize_html(html_string)
+    """Render HTML input into readable plain text.
+
+    Resilient by construction (Req 6): decoding, normalization, strict parsing,
+    and the DOM render walk are each guarded so malformed or hostile HTML
+    degrades to best-effort text instead of raising.
+    """
+    try:
+        decoded = _ensure_utf8(html_string)
+    except Exception as exc:  # decode_html is already safe; belt and braces
+        print(f"HTML decode failed: {exc}")
+        return ""
+
+    try:
+        normalized_html = _normalize_html(decoded)
+    except Exception as exc:
+        print(f"HTML normalization failed: {exc}")
+        return decoded  # show the raw text rather than nothing
+
     try:
         document = parseString(normalized_html)
     except ExpatError as exc:
         print(f"HTML parse failed: {exc}")
         _log_parse_error_context(normalized_html, exc)
-        try:
-            content = ""
+        return _render_with_lenient_parser(normalized_html, base_url)
 
-            def writer(text: str):
-                nonlocal content
-                content += text
-
-            parser = _LenientHTMLParser(writer, base_url)
-            parser.feed(normalized_html)
-            parser.close()
-        except Exception as fallback_exc:
-            print(f"HTML fallback parse failed: {fallback_exc}")
-            return ""
-        return content
     content = ""
 
-    def writer(text: str):
+    def writer(text: str) -> None:
         nonlocal content
         content += text
 
-    render(document, writer, base_url)
+    try:
+        render(document, writer, base_url)
+    except Exception as exc:
+        # The success-path render walk is the historical top crash surface; on
+        # any failure fall back to the lenient streaming parser.
+        print(f"HTML render walk failed: {exc}")
+        return _render_with_lenient_parser(normalized_html, base_url)
+
     return content

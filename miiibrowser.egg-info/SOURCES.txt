@@ -8,6 +8,7 @@ miiibrowser/browserWindow.py
 miiibrowser/charset_parser.py
 miiibrowser/colors.py
 miiibrowser/dom_html_parser.py
+miiibrowser/tab.py
 miiibrowser/tab_bar.py
 miiibrowser.egg-info/PKG-INFO
 miiibrowser.egg-info/SOURCES.txt
@@ -16,3 +17,4 @@ miiibrowser.egg-info/entry_points.txt
 miiibrowser.egg-info/requires.txt
 miiibrowser.egg-info/top_level.txt
 miiibrowser/oldahh/treeHTMLParser.py
+tests/test_core.py

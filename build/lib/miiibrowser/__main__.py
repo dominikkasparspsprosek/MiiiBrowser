@@ -1,4 +1,7 @@
-from BrowserWindow import BrowserWindow
+try:
+    from .BrowserWindow import BrowserWindow
+except ImportError:  # allow `python BrowserWindow.py`-style loose runs
+    from BrowserWindow import BrowserWindow
 
 
 def main() -> None:
